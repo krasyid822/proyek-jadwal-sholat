@@ -18,6 +18,17 @@ const DOMElements = {
     }
 };
 
+// Objek ini sekarang sebagian besar tidak aktif, digantikan oleh PushManager,
+// tapi pemutar audionya mungkin masih relevan untuk tes internal atau fitur mendatang.
+const NotificationManager = {
+    _playAudio: function() {
+        // PERUBAHAN: Dihapus .mp3 dari nama file default
+        const audioSrc = localStorage.getItem("selectedAudio") || "adzan1";
+        const audio = new Audio(audioSrc);
+        audio.play().catch(error => console.error("Gagal memutar audio:", error));
+    }
+};
+
 const UIManager = {
     init: function(app) {
         this.app = app;
