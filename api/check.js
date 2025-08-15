@@ -54,27 +54,28 @@ function createNotificationPayload(prayerTimes, prayerNames) {
     const now = new Date();
     for (const prayer in prayerTimes) {
         if (!prayerNames[prayer]) continue;
-        
         const [hour, minute] = prayerTimes[prayer].split(':');
         const prayerTime = new Date();
         prayerTime.setHours(parseInt(hour), parseInt(minute), 0, 0);
 
-        // Notifikasi Adzan (kategori berdasarkan nama sholat)
+        // Notifikasi Adzan
         if (prayerTime.getHours() === now.getHours() && prayerTime.getMinutes() === now.getMinutes()) {
+            // PERUBAHAN: Bedakan kategori untuk Subuh
+            let adhanTag = prayer === 'fajr' ? 'adhan_fajr' : prayer;
             return { 
                 title: 'Waktu Sholat', 
                 body: `Telah masuk waktu sholat ${prayerNames[prayer]}.`,
-                tag: prayer // e.g., 'fajr', 'dhuhr', etc.
+                tag: adhanTag // e.g., 'adhan_fajr', 'dhuhr', 'asr', etc.
             };
         }
         
-        // Notifikasi Countdown (satu kategori untuk semua)
+        // Notifikasi Countdown
         const countdownTime = new Date(prayerTime.getTime() - 10 * 60 * 1000);
         if (countdownTime.getHours() === now.getHours() && countdownTime.getMinutes() === now.getMinutes()) {
             return { 
                 title: 'Pengingat Sholat', 
                 body: `10 menit lagi memasuki waktu ${prayerNames[prayer]}.`,
-                tag: 'countdown' // Kategori tunggal untuk pengingat
+                tag: 'countdown'
             };
         }
     }
