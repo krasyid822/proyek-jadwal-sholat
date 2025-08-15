@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jadwal Sholat PWA</title>
+  <link rel="icon" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Jadwal Sholat</h1>
+    <div class="info" id="location-info">Mendapatkan informasi lokasi...</div>
+    <div class="info" id="countdown">Menunggu waktu sholat berikutnya...</div>
+    
+    <button id="btn-calibration" class="btn">Kalibrasi Jadwal</button>
+    <div id="calibration-menu" style="display: none;">
+      <h2>Kalibrasi Jadwal Sholat</h2>
+      <p style="font-size: 12px; color: #666;">Gunakan hanya jika diperlukan.</p>
+      <form id="calibration-form">
+        <label>Imsak: <input type="number" name="imsak" step="1" value="0"></label>
+        <label>Subuh: <input type="number" name="fajr" step="1" value="0"></label>
+        <label>Terbit: <input type="number" name="sunrise" step="1" value="0"></label>
+        <label>Zuhur: <input type="number" name="dhuhr" step="1" value="0"></label>
+        <label>Ashar: <input type="number" name="asr" step="1" value="0"></label>
+        <label>Maghrib: <input type="number" name="maghrib" step="1" value="0"></label>
+        <label>Isya: <input type="number" name="isha" step="1" value="0"></label>
+        <button class="submit" type="submit">Terapkan</button>
+      </form>
+    </div>
+    
+    <button id="btn-notification" class="btn">Notifikasi Latar Belakang</button>
+    <div id="notification-menu" style="display: none;">
+      </div>
+
+    <div id="jadwal"></div>
+
+    <a href="preview.html" class="btn">Preview Jadwal Bulan Ini</a>
+    <a href="https://g.co/qiblafinder" target="_blank" class="btn">Arah Kiblat</a>
+
+    <button id="btn-feedback" class="btn">Feedback</button>
+    <div id="feedback-menu" class="usr-feedback" style="display: none;">
+      <p>Aplikasi ini menggunakan Firebase Cloud Messaging untuk notifikasi latar belakang.</p>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script src="PrayTimes.js"></script>
+  <script src="config.js"></script>
+  <script src="firebase-init.js"></script>
+  <script src="engine.js"></script>
+  <script src="view.js"></script>
+  <script src="push-manager.js"></script>
+  <script src="app.js"></script>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js'));
+    }
+  </script>
+</body>
+</html>
