@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   });
 
   webpush.setVapidDetails(
-    'mailto:your-email@example.com',
+    `mailto:${process.env.VAPID_EMAIL || 'default@example.com'}`,
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
@@ -34,22 +34,23 @@ export default async function handler(req, res) {
     let payloadObject;
 
     if (type === 'adhan') {
-      // PERUBAHAN: Gunakan tag khusus jika sholat yang dites adalah Subuh
       let adhanTag = prayer === 'fajr' ? 'adhan_fajr' : prayer;
       payloadObject = {
         title: `Tes Adzan (${prayerNames[prayer] || ''}) ✅`,
         body: 'Ini adalah notifikasi untuk waktu sholat.',
         tag: adhanTag
       };
-    } else { // type === 'countdown'
+    } else {
       payloadObject = {
         title: 'Tes Pengingat (10 Menit) ✅',
         body: 'Ini adalah notifikasi untuk pengingat sebelum sholat.',
         tag: 'countdown'
       };
     }
-
+    
+    // PERBAIKAN: Mengirim payload sebagai string JSON
     await webpush.sendNotification(subscriptionData, JSON.stringify(payloadObject));
+
     res.status(200).json({ message: 'Test notification sent successfully!' });
   } catch (err) {
     console.error('Error sending test notification:', err);

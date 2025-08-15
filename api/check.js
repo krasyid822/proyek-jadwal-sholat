@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   });
 
   webpush.setVapidDetails(
-    'mailto:your-email@example.com',
+    `mailto:${process.env.VAPID_EMAIL || 'default@example.com'}`,
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
@@ -30,8 +30,9 @@ export default async function handler(req, res) {
       const payloadObject = createNotificationPayload(times, prayerNames);
 
       if (payloadObject) {
-        console.log(`Sending notification: ${payloadObject.body}`);
+        console.log(`Sending notification: ${payloadObject.body} with tag: ${payloadObject.tag}`);
         try {
+          // PERBAIKAN: Mengirim payload sebagai string JSON
           await webpush.sendNotification(subscriptionData, JSON.stringify(payloadObject));
         } catch (error) {
           if (error.statusCode === 410) {
@@ -58,18 +59,15 @@ function createNotificationPayload(prayerTimes, prayerNames) {
         const prayerTime = new Date();
         prayerTime.setHours(parseInt(hour), parseInt(minute), 0, 0);
 
-        // Notifikasi Adzan
         if (prayerTime.getHours() === now.getHours() && prayerTime.getMinutes() === now.getMinutes()) {
-            // PERUBAHAN: Bedakan kategori untuk Subuh
             let adhanTag = prayer === 'fajr' ? 'adhan_fajr' : prayer;
             return { 
                 title: 'Waktu Sholat', 
                 body: `Telah masuk waktu sholat ${prayerNames[prayer]}.`,
-                tag: adhanTag // e.g., 'adhan_fajr', 'dhuhr', 'asr', etc.
+                tag: adhanTag
             };
         }
         
-        // Notifikasi Countdown
         const countdownTime = new Date(prayerTime.getTime() - 10 * 60 * 1000);
         if (countdownTime.getHours() === now.getHours() && countdownTime.getMinutes() === now.getMinutes()) {
             return { 
