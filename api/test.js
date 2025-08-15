@@ -1,3 +1,4 @@
+// api/test.js
 import { Pool } from 'pg';
 import webpush from 'web-push';
 
@@ -11,11 +12,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Endpoint, type, and prayer are required' });
   }
 
+  // Koneksi database
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
   });
 
+  // Konfigurasi VAPID
   webpush.setVapidDetails(
     `mailto:${process.env.VAPID_EMAIL || 'default@example.com'}`,
     process.env.VAPID_PUBLIC_KEY,
@@ -23,35 +26,59 @@ export default async function handler(req, res) {
   );
 
   try {
-    const { rows } = await pool.query('SELECT subscription_data FROM subscriptions WHERE endpoint = $1', [endpoint]);
+    // Ambil subscription dari DB berdasarkan endpoint
+    const { rows } = await pool.query(
+      'SELECT subscription_data FROM subscriptions WHERE endpoint = $1',
+      [endpoint]
+    );
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Subscription not found' });
     }
 
     const subscriptionData = rows[0].subscription_data;
-    const prayerNames = { fajr: "Subuh", dhuhr: "Zuhur", asr: "Ashar", maghrib: "Maghrib", isha: "Isya" };
+    const prayerNames = {
+      fajr: "Subuh",
+      dhuhr: "Zuhur",
+      asr: "Ashar",
+      maghrib: "Maghrib",
+      isha: "Isya"
+    };
+
     let payloadObject;
 
+    // ✅ Mapping type/prayer → channel/tag
     if (type === 'adhan') {
-      let adhanTag = prayer === 'fajr' ? 'adhan_fajr' : prayer;
+      const tag = (prayer === 'fajr') ? 'subuh' : 'utama';
       payloadObject = {
         title: `Tes Adzan (${prayerNames[prayer] || ''}) ✅`,
         body: 'Ini adalah notifikasi untuk waktu sholat.',
-        tag: adhanTag
+        tag
+      };
+    } else if (type === 'countdown') {
+      payloadObject = {
+        title: 'Tes Pengingat (10 Menit) ✅',
+        body: `Hitung mundur menuju waktu ${prayerNames[prayer] || 'sholat'}.`,
+        tag: 'countdown'
       };
     } else {
       payloadObject = {
-        title: 'Tes Pengingat (10 Menit) ✅',
-        body: 'Ini adalah notifikasi untuk pengingat sebelum sholat.',
-        tag: 'countdown'
+        title: 'Tes Notifikasi',
+        body: 'Jenis notifikasi tidak dikenali.',
+        tag: 'general'
       };
     }
-    
-    // PERBAIKAN: Mengirim payload sebagai string JSON
-    await webpush.sendNotification(subscriptionData, JSON.stringify(payloadObject));
+
+    console.log(`[API Test] Mengirim notifikasi test dengan tag: "${payloadObject.tag}"`);
+
+    // Kirim notifikasi push
+    await webpush.sendNotification(
+      subscriptionData,
+      JSON.stringify(payloadObject)
+    );
 
     res.status(200).json({ message: 'Test notification sent successfully!' });
+
   } catch (err) {
     console.error('Error sending test notification:', err);
     res.status(500).json({ error: 'Failed to send test notification' });

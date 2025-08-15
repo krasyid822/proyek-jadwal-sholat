@@ -1,81 +1,96 @@
+// api/check.js
 import { Pool } from 'pg';
 import webpush from 'web-push';
-import PrayTimes from './_PrayTimes.js';
+import prayTimes from 'praytimes'; // Pastikan package ini terpasang
+import moment from 'moment-timezone';
 
 export default async function handler(req, res) {
-  console.log('Cron job started...');
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
+  // Koneksi ke database
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
   });
 
+  // Konfigurasi VAPID
   webpush.setVapidDetails(
     `mailto:${process.env.VAPID_EMAIL || 'default@example.com'}`,
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
 
-  const prayTimes = new PrayTimes('MWL');
-  prayTimes.adjust({ fajr: 20, isha: 18 });
-  const prayerNames = { fajr: "Subuh", dhuhr: "Zuhur", asr: "Ashar", maghrib: "Maghrib", isha: "Isya" };
-
   try {
-    const { rows: allSubscriptions } = await pool.query('SELECT * FROM subscriptions');
-    console.log(`Checking ${allSubscriptions.length} subscriptions...`);
+    // Tentukan zona waktu & lokasi default
+    const timezone = process.env.PRAYER_TIMEZONE || 'Asia/Jakarta';
+    const lat = parseFloat(process.env.PRAYER_LAT || '-6.2');
+    const lon = parseFloat(process.env.PRAYER_LON || '106.8');
 
-    for (const sub of allSubscriptions) {
-      const { location, subscription_data: subscriptionData } = sub;
-      const times = prayTimes.getTimes(new Date(), [location.lat, location.lng, location.altitude || 0], 7);
-      const payloadObject = createNotificationPayload(times, prayerNames);
+    // Hitung jadwal sholat hari ini
+    const pt = new prayTimes('Karachi');
+    const times = pt.getTimes(new Date(), [lat, lon], +7);
 
-      if (payloadObject) {
-        console.log(`Sending notification: ${payloadObject.body} with tag: ${payloadObject.tag}`);
-        try {
-          // PERBAIKAN: Mengirim payload sebagai string JSON
-          await webpush.sendNotification(subscriptionData, JSON.stringify(payloadObject));
-        } catch (error) {
-          if (error.statusCode === 410) {
-            console.log('Subscription tidak valid, menghapus.');
-            await pool.query('DELETE FROM subscriptions WHERE id = $1', [sub.id]);
-          } else {
-            console.error('Gagal mengirim notifikasi:', error.body || error);
-          }
-        }
+    const prayerOrder = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    const prayerNames = {
+      fajr: 'Subuh',
+      dhuhr: 'Zuhur',
+      asr: 'Ashar',
+      maghrib: 'Maghrib',
+      isha: 'Isya'
+    };
+
+    const now = moment().tz(timezone);
+
+    // Ambil semua subscriber
+    const { rows: subs } = await pool.query('SELECT subscription_data FROM subscriptions');
+
+    for (const prayer of prayerOrder) {
+      const prayerTime = moment.tz(times[prayer], 'HH:mm', timezone);
+
+      // Notifikasi Adzan (tepat waktu)
+      if (now.format('HH:mm') === prayerTime.format('HH:mm')) {
+        const tag = (prayer === 'fajr') ? 'subuh' : 'utama';
+        const payloadObject = {
+          title: `Waktu Sholat ${prayerNames[prayer]} 🕌`,
+          body: `Sudah masuk waktu sholat ${prayerNames[prayer]}.`,
+          tag
+        };
+        await sendToAll(subs, payloadObject);
+      }
+
+      // Notifikasi Countdown (10 menit sebelum)
+      const countdownTime = prayerTime.clone().subtract(10, 'minutes');
+      if (now.format('HH:mm') === countdownTime.format('HH:mm')) {
+        const payloadObject = {
+          title: `Pengingat ${prayerNames[prayer]} ⏳`,
+          body: `10 menit menuju waktu sholat ${prayerNames[prayer]}.`,
+          tag: 'countdown'
+        };
+        await sendToAll(subs, payloadObject);
       }
     }
-    res.status(200).json({ message: `Checked ${allSubscriptions.length} subscriptions.` });
-  } catch (dbError) {
-    console.error("Database error:", dbError);
-    res.status(500).json({ error: 'Database query failed.' });
+
+    res.status(200).json({ message: 'Check completed successfully' });
+
+  } catch (err) {
+    console.error('Error in check.js:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 }
 
-function createNotificationPayload(prayerTimes, prayerNames) {
-    const now = new Date();
-    for (const prayer in prayerTimes) {
-        if (!prayerNames[prayer]) continue;
-        const [hour, minute] = prayerTimes[prayer].split(':');
-        const prayerTime = new Date();
-        prayerTime.setHours(parseInt(hour), parseInt(minute), 0, 0);
-
-        if (prayerTime.getHours() === now.getHours() && prayerTime.getMinutes() === now.getMinutes()) {
-            let adhanTag = prayer === 'fajr' ? 'adhan_fajr' : prayer;
-            return { 
-                title: 'Waktu Sholat', 
-                body: `Telah masuk waktu sholat ${prayerNames[prayer]}.`,
-                tag: adhanTag
-            };
-        }
-        
-        const countdownTime = new Date(prayerTime.getTime() - 10 * 60 * 1000);
-        if (countdownTime.getHours() === now.getHours() && countdownTime.getMinutes() === now.getMinutes()) {
-            return { 
-                title: 'Pengingat Sholat', 
-                body: `10 menit lagi memasuki waktu ${prayerNames[prayer]}.`,
-                tag: 'countdown'
-            };
-        }
+// Helper kirim ke semua subscriber
+async function sendToAll(subscribers, payloadObject) {
+  for (const sub of subscribers) {
+    try {
+      await webpush.sendNotification(
+        sub.subscription_data,
+        JSON.stringify(payloadObject)
+      );
+      console.log(`[API Check] Sent: "${payloadObject.title}" | Tag: "${payloadObject.tag}"`);
+    } catch (err) {
+      console.error('Push error:', err);
     }
-    return null;
+  }
 }
