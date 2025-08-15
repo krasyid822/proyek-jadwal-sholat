@@ -2,8 +2,9 @@ const PushManager = {
     // Kunci publik VAPID Anda.
     VAPID_PUBLIC_KEY: 'BBLwDppUq609cl8GmiPUn0C3e3Ab4e9HuBgOqTFwlEo_VKZIiUv5eir-hRGlllHP2pOZJY_oLTOeBbFnk_Gblkw',
     
-    // URL Endpoint API Vercel Anda yang sudah benar.
+    // URL Endpoint API Vercel Anda.
     API_ENDPOINT: 'https://proyek-jadwal-sholat.vercel.app/api/subscribe',
+    API_TEST_ENDPOINT: 'https://proyek-jadwal-sholat.vercel.app/api/test',
     
     isSubscribed: false,
     swRegistration: null,
@@ -32,26 +33,59 @@ const PushManager = {
         const menu = DOMElements.notificationMenu;
         if (!menu) return;
 
-        // Hapus tombol lama untuk mencegah duplikasi
-        const oldBtn = document.getElementById('btn-subscribe-toggle');
-        if (oldBtn) oldBtn.remove();
+        // Hapus tombol-tombol lama untuk mencegah duplikasi
+        menu.querySelectorAll('.btn').forEach(btn => btn.remove());
         
-        const btn = document.createElement('button');
-        btn.id = 'btn-subscribe-toggle';
-        btn.className = 'btn';
+        const btnToggle = document.createElement('button');
+        btnToggle.id = 'btn-subscribe-toggle';
+        btnToggle.className = 'btn';
         
         if (this.isSubscribed) {
-            btn.textContent = 'Nonaktifkan Notifikasi Latar Belakang';
-            btn.style.backgroundColor = '#dc3545'; // Warna merah
-            btn.onclick = () => this.unsubscribeUser();
+            btnToggle.textContent = 'Nonaktifkan Notifikasi Latar Belakang';
+            btnToggle.style.backgroundColor = '#dc3545'; // Warna merah
+            btnToggle.onclick = () => this.unsubscribeUser();
             menu.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Status: <b>Aktif</b>.</p>';
+
+            // Buat tombol tes jika sudah subscribe
+            const btnTest = document.createElement('button');
+            btnTest.id = 'btn-test-notification';
+            btnTest.className = 'btn';
+            btnTest.textContent = 'Uji Notifikasi Latar Belakang';
+            btnTest.style.backgroundColor = '#009688';
+            btnTest.onclick = () => this.testNotification();
+            menu.appendChild(btnTest); // Tambahkan tombol tes
+
         } else {
-            btn.textContent = 'Aktifkan Notifikasi Latar Belakang';
-            btn.style.backgroundColor = '#28a745'; // Warna hijau
-            btn.onclick = () => this.subscribeUser();
+            btnToggle.textContent = 'Aktifkan Notifikasi Latar Belakang';
+            btnToggle.style.backgroundColor = '#28a745'; // Warna hijau
+            btnToggle.onclick = () => this.subscribeUser();
             menu.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Aktifkan untuk menerima notifikasi bahkan saat aplikasi ditutup.</p>';
         }
-        menu.appendChild(btn);
+        menu.appendChild(btnToggle);
+    },
+
+    testNotification: async function() {
+        const sub = await this.swRegistration.pushManager.getSubscription();
+        if (!sub) {
+            ErrorNotifier.show('Anda belum terdaftar notifikasi.', 'Aktifkan notifikasi terlebih dahulu.');
+            return;
+        }
+
+        ErrorNotifier.show('Mengirim notifikasi tes...', 'Silakan periksa panel notifikasi Anda dalam beberapa detik.', 'info', 4000);
+
+        try {
+            const response = await fetch(this.API_TEST_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint: sub.endpoint }),
+            });
+            if (!response.ok) {
+                throw new Error('Server merespon dengan error.');
+            }
+        } catch(err) {
+            console.error('Gagal mengirim notifikasi tes:', err);
+            ErrorNotifier.show('Gagal mengirim notifikasi tes.', 'Pastikan koneksi internet stabil dan server berjalan.');
+        }
     },
 
     subscribeUser: async function() {
