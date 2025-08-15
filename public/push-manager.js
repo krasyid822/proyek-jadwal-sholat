@@ -16,10 +16,18 @@ const PushManager = {
                 this.updateSubscriptionState();
             });
         } else {
-            console.warn('Push messaging tidak didukung oleh browser ini.');
-            const menu = DOMElements.notificationMenu;
-            if(menu) menu.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Fitur ini tidak didukung oleh browser Anda.</p>';
+            console.warn('Push messaging tidak didukung oleh browser atau koneksi ini.');
+            this.showUnsupportedUI();
         }
+    },
+
+    showUnsupportedUI: function() {
+        const menu = DOMElements.notificationMenu;
+        if (!menu) return;
+        
+        const dynamicContent = document.createElement('div');
+        dynamicContent.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Fitur ini tidak didukung oleh browser Anda atau memerlukan koneksi HTTPS yang aman.</p>';
+        menu.prepend(dynamicContent);
     },
 
     updateSubscriptionState: async function() {
@@ -33,7 +41,6 @@ const PushManager = {
         const menu = DOMElements.notificationMenu;
         if (!menu) return;
 
-        // Kosongkan konten dinamis sebelumnya untuk mencegah duplikasi
         const dynamicContent = menu.querySelector('.dynamic-content');
         if (dynamicContent) dynamicContent.remove();
 
@@ -46,7 +53,7 @@ const PushManager = {
         
         if (this.isSubscribed) {
             btnToggle.textContent = 'Nonaktifkan Notifikasi Latar Belakang';
-            btnToggle.style.backgroundColor = '#dc3545'; // Warna merah
+            btnToggle.style.backgroundColor = '#dc3545';
             btnToggle.onclick = () => this.unsubscribeUser();
             dynamicContainer.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Status: <b>Aktif</b>.</p>';
 
@@ -54,7 +61,6 @@ const PushManager = {
             const nextPrayerName = nextPrayer ? nextPrayer.name : 'berikutnya';
             const prayerNameText = AppConfig.prayerNames[nextPrayerName] || 'Sholat';
 
-            // Tombol Tes Adzan (spesifik untuk sholat berikutnya)
             const btnTestAdhan = document.createElement('button');
             btnTestAdhan.className = 'btn';
             btnTestAdhan.textContent = `Uji Notifikasi Adzan (${prayerNameText})`;
@@ -62,7 +68,6 @@ const PushManager = {
             btnTestAdhan.onclick = () => this.testNotification('adhan', nextPrayerName);
             dynamicContainer.appendChild(btnTestAdhan);
 
-            // Tombol Tes Pengingat (10 menit)
             const btnTestCountdown = document.createElement('button');
             btnTestCountdown.className = 'btn';
             btnTestCountdown.textContent = 'Uji Notifikasi Pengingat (10 Menit)';
@@ -72,12 +77,12 @@ const PushManager = {
             
         } else {
             btnToggle.textContent = 'Aktifkan Notifikasi Latar Belakang';
-            btnToggle.style.backgroundColor = '#28a745'; // Warna hijau
+            btnToggle.style.backgroundColor = '#28a745';
             btnToggle.onclick = () => this.subscribeUser();
             dynamicContainer.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Aktifkan untuk menerima notifikasi bahkan saat aplikasi ditutup.</p>';
         }
         dynamicContainer.appendChild(btnToggle);
-        menu.prepend(dynamicContainer); // Tambahkan konten dinamis di awal menu
+        menu.prepend(dynamicContainer);
     },
 
     testNotification: async function(type, prayer) {
@@ -95,8 +100,8 @@ const PushManager = {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     endpoint: sub.endpoint,
-                    type: type, // 'adhan' atau 'countdown'
-                    prayer: prayer // nama sholat untuk kategori
+                    type: type,
+                    prayer: prayer
                 }),
             });
         } catch(err) {
