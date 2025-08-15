@@ -1,38 +1,47 @@
-// service-worker.js
+// service-worker.js (Versi untuk Vercel, BUKAN Firebase)
 
-// Import skrip Firebase
-importScripts("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js");
-importScripts("https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js");
+self.addEventListener('push', function(event) {
+    console.log('[SW] Push message diterima.');
+    let payload;
+    try {
+        payload = event.data.json();
+    } catch (e) {
+        console.error('[SW] Gagal mem-parsing data push sebagai JSON:', e);
+        payload = {
+            title: 'Notifikasi Baru',
+            body: 'Anda memiliki pesan baru.',
+        };
+    }
 
-// Ganti placeholder dengan konfigurasi Anda yang sudah benar
-const firebaseConfig = {
-  apiKey: "AIzaSyDrVlBSGKSvSc6OwZeK6bBWZYD3Jo1IdgA",
-  authDomain: "pwa-jadwal-sholat.firebaseapp.com",
-  projectId: "pwa-jadwal-sholat",
-  storageBucket: "pwa-jadwal-sholat.firebasestorage.app",
-  messagingSenderId: "381696407215",
-  appId: "1:381696407215:web:684f64f27ab78e32ad865a"
-};
-
-firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
-
-// Handler untuk notifikasi yang datang saat aplikasi di background
-messaging.onBackgroundMessage(function(payload) {
-    console.log('[service-worker.js] Menerima pesan di latar belakang: ', payload);
-
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: '/favicon.png'
+    const title = payload.title || 'Jadwal Sholat';
+    const options = {
+        body: payload.body || 'Waktunya Sholat',
+        icon: '/favicon.png',
+        badge: '/favicon.png'
     };
 
-    return self.registration.showNotification(notificationTitle, notificationOptions);
+    event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Caching strategy (opsional, tapi disarankan)
-const cacheName = 'jadwal-sholat-v6-firebase';
-const assetsToCache = [ '/', 'index.html', 'style.css', 'PrayTimes.js', 'config.js', 'engine.js', 'view.js', 'app.js', 'push-manager.js', 'firebase-init.js', 'favicon.png' ];
+self.addEventListener('notificationclick', function(event) {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            for (const client of clientList) {
+                if ('focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow('/');
+            }
+        })
+    );
+});
+
+// Strategi Caching
+const cacheName = 'jadwal-sholat-v7-vercel';
+const assetsToCache = [ '/', 'index.html', 'style.css', 'PrayTimes.js', 'config.js', 'engine.js', 'view.js', 'app.js', 'push-manager.js', 'error-notifier.js', 'favicon.png' ];
 
 self.addEventListener('install', event => {
   event.waitUntil( caches.open(cacheName).then(cache => cache.addAll(assetsToCache)) );

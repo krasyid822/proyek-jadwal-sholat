@@ -11,7 +11,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Endpoint is required' });
   }
 
-  // Konfigurasi Database dan VAPID dari Environment Variables
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
@@ -24,7 +23,6 @@ export default async function handler(req, res) {
   );
 
   try {
-    // Cari data subscription lengkap di database berdasarkan endpoint
     const { rows } = await pool.query('SELECT subscription_data FROM subscriptions WHERE endpoint = $1', [endpoint]);
 
     if (rows.length === 0) {
@@ -33,7 +31,7 @@ export default async function handler(req, res) {
 
     const subscriptionData = rows[0].subscription_data;
     
-    // Siapkan dan kirim notifikasi tes
+    // Menggunakan format payload yang sama dengan service worker
     const payload = JSON.stringify({
       title: 'Notifikasi Tes ✅',
       body: 'Jika Anda menerima ini, sistem notifikasi bekerja dengan sempurna!',
