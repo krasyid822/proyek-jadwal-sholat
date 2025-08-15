@@ -33,8 +33,12 @@ const PushManager = {
         const menu = DOMElements.notificationMenu;
         if (!menu) return;
 
-        // Hapus tombol-tombol lama untuk mencegah duplikasi
-        menu.querySelectorAll('.btn').forEach(btn => btn.remove());
+        // Kosongkan konten dinamis sebelumnya untuk mencegah duplikasi
+        const dynamicContent = menu.querySelector('.dynamic-content');
+        if (dynamicContent) dynamicContent.remove();
+
+        const dynamicContainer = document.createElement('div');
+        dynamicContainer.className = 'dynamic-content';
         
         const btnToggle = document.createElement('button');
         btnToggle.id = 'btn-subscribe-toggle';
@@ -44,27 +48,39 @@ const PushManager = {
             btnToggle.textContent = 'Nonaktifkan Notifikasi Latar Belakang';
             btnToggle.style.backgroundColor = '#dc3545'; // Warna merah
             btnToggle.onclick = () => this.unsubscribeUser();
-            menu.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Status: <b>Aktif</b>.</p>';
+            dynamicContainer.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Status: <b>Aktif</b>.</p>';
 
-            // Buat tombol tes jika sudah subscribe
-            const btnTest = document.createElement('button');
-            btnTest.id = 'btn-test-notification';
-            btnTest.className = 'btn';
-            btnTest.textContent = 'Uji Notifikasi Latar Belakang';
-            btnTest.style.backgroundColor = '#009688';
-            btnTest.onclick = () => this.testNotification();
-            menu.appendChild(btnTest); // Tambahkan tombol tes
+            const nextPrayer = PrayerTimeManager.getNextPrayer();
+            const nextPrayerName = nextPrayer ? nextPrayer.name : 'berikutnya';
+            const prayerNameText = AppConfig.prayerNames[nextPrayerName] || 'Sholat';
 
+            // Tombol Tes Adzan (spesifik untuk sholat berikutnya)
+            const btnTestAdhan = document.createElement('button');
+            btnTestAdhan.className = 'btn';
+            btnTestAdhan.textContent = `Uji Notifikasi Adzan (${prayerNameText})`;
+            btnTestAdhan.style.backgroundColor = '#009688';
+            btnTestAdhan.onclick = () => this.testNotification('adhan', nextPrayerName);
+            dynamicContainer.appendChild(btnTestAdhan);
+
+            // Tombol Tes Pengingat (10 menit)
+            const btnTestCountdown = document.createElement('button');
+            btnTestCountdown.className = 'btn';
+            btnTestCountdown.textContent = 'Uji Notifikasi Pengingat (10 Menit)';
+            btnTestCountdown.style.backgroundColor = '#ff9800';
+            btnTestCountdown.onclick = () => this.testNotification('countdown', nextPrayerName);
+            dynamicContainer.appendChild(btnTestCountdown);
+            
         } else {
             btnToggle.textContent = 'Aktifkan Notifikasi Latar Belakang';
             btnToggle.style.backgroundColor = '#28a745'; // Warna hijau
             btnToggle.onclick = () => this.subscribeUser();
-            menu.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Aktifkan untuk menerima notifikasi bahkan saat aplikasi ditutup.</p>';
+            dynamicContainer.innerHTML = '<h2>Notifikasi Latar Belakang</h2><p>Aktifkan untuk menerima notifikasi bahkan saat aplikasi ditutup.</p>';
         }
-        menu.appendChild(btnToggle);
+        dynamicContainer.appendChild(btnToggle);
+        menu.prepend(dynamicContainer); // Tambahkan konten dinamis di awal menu
     },
 
-    testNotification: async function() {
+    testNotification: async function(type, prayer) {
         const sub = await this.swRegistration.pushManager.getSubscription();
         if (!sub) {
             ErrorNotifier.show('Anda belum terdaftar notifikasi.', 'Aktifkan notifikasi terlebih dahulu.');
@@ -74,14 +90,15 @@ const PushManager = {
         ErrorNotifier.show('Mengirim notifikasi tes...', 'Silakan periksa panel notifikasi Anda dalam beberapa detik.', 'info', 4000);
 
         try {
-            const response = await fetch(this.API_TEST_ENDPOINT, {
+            await fetch(this.API_TEST_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ endpoint: sub.endpoint }),
+                body: JSON.stringify({ 
+                    endpoint: sub.endpoint,
+                    type: type, // 'adhan' atau 'countdown'
+                    prayer: prayer // nama sholat untuk kategori
+                }),
             });
-            if (!response.ok) {
-                throw new Error('Server merespon dengan error.');
-            }
         } catch(err) {
             console.error('Gagal mengirim notifikasi tes:', err);
             ErrorNotifier.show('Gagal mengirim notifikasi tes.', 'Pastikan koneksi internet stabil dan server berjalan.');

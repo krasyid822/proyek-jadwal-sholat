@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import webpush from 'web-push';
-import PrayTimes from './_PrayTimes.js'; // Pastikan path ini benar
+import PrayTimes from './_PrayTimes.js';
 
 export default async function handler(req, res) {
   console.log('Cron job started...');
@@ -32,7 +32,6 @@ export default async function handler(req, res) {
       if (payloadObject) {
         console.log(`Sending notification: ${payloadObject.body}`);
         try {
-          // Kirim payload sebagai string JSON
           await webpush.sendNotification(subscriptionData, JSON.stringify(payloadObject));
         } catch (error) {
           if (error.statusCode === 410) {
@@ -55,15 +54,28 @@ function createNotificationPayload(prayerTimes, prayerNames) {
     const now = new Date();
     for (const prayer in prayerTimes) {
         if (!prayerNames[prayer]) continue;
+        
         const [hour, minute] = prayerTimes[prayer].split(':');
         const prayerTime = new Date();
         prayerTime.setHours(parseInt(hour), parseInt(minute), 0, 0);
+
+        // Notifikasi Adzan (kategori berdasarkan nama sholat)
         if (prayerTime.getHours() === now.getHours() && prayerTime.getMinutes() === now.getMinutes()) {
-            return { title: 'Waktu Sholat', body: `Telah masuk waktu sholat ${prayerNames[prayer]}.` };
+            return { 
+                title: 'Waktu Sholat', 
+                body: `Telah masuk waktu sholat ${prayerNames[prayer]}.`,
+                tag: prayer // e.g., 'fajr', 'dhuhr', etc.
+            };
         }
+        
+        // Notifikasi Countdown (satu kategori untuk semua)
         const countdownTime = new Date(prayerTime.getTime() - 10 * 60 * 1000);
         if (countdownTime.getHours() === now.getHours() && countdownTime.getMinutes() === now.getMinutes()) {
-            return { title: 'Pengingat Sholat', body: `10 menit lagi memasuki waktu ${prayerNames[prayer]}.` };
+            return { 
+                title: 'Pengingat Sholat', 
+                body: `10 menit lagi memasuki waktu ${prayerNames[prayer]}.`,
+                tag: 'countdown' // Kategori tunggal untuk pengingat
+            };
         }
     }
     return null;

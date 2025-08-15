@@ -184,3 +184,23 @@ h1, h2 {
     color: #0c5460;
     border-left-color: #bee5eb;
 }
+
+/* =============== Gaya Tambahan untuk Menu Notifikasi =============== */
+.sub-menu-section {
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+  margin-top: 20px;
+}
+
+.sub-menu-section h3 {
+  margin-top: 0;
+  text-align: center;
+}
+
+.btn.download-btn {
+  background-color: #6c757d; /* Warna abu-abu */
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
