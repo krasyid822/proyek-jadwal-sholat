@@ -74,7 +74,7 @@ async function runFullDiagnostic() {
 
   let serverResults = { envStatus: '—', dbStatus: '—', pushStatus: '—' };
   try {
-    const res = await fetch('/api/full-diagnostic');
+    const res = await fetch('/api/server-diagnostic');
     serverResults = await res.json();
   } catch {
     serverResults = { envStatus: '❌ Server error', dbStatus: '❌', pushStatus: '❌' };
