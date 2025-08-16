@@ -1,133 +1,90 @@
 .container {
-    max-width: 960px;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 0 15px;
+    padding: 15px;
+    text-align: center;
 }
 
 body {
-  font-family: sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   margin: 0;
   padding: 20px 0;
-  background: #f7f7f7;
+  background: #f4f4f9;
+  color: #333;
 }
 
-h1, h2 { 
-  text-align: center; 
+h1 { 
+  color: #2c3e50;
 }
 
 .info {
-  background: #e0e0e0;
-  padding: 10px;
-  border-radius: 4px;
-  margin: 10px auto;
-  width: fit-content;
-  text-align: center;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px auto;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  font-size: 1.1em;
+}
+
+.prayer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 20px;
 }
 
 .prayer-time {
-  padding: 10px;
-  margin: 10px 0;
-  background: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-#calibration-menu, #notification-menu, #hijri-calibration-menu, #feedback-menu {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
   padding: 15px;
-  margin: 15px auto;
-  max-width: 300px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  border-left: 5px solid #3498db;
 }
 
-#calibration-menu label, #notification-menu label, #hijri-calibration-menu label {
-  display: block;
-  margin-bottom: 8px;
+.prayer-time.next {
+    border-left-color: #2ecc71;
+    transform: scale(1.05);
+    font-weight: bold;
 }
 
-#calibration-menu input, #hijri-calibration-menu input {
-  width: 100%;
-  padding: 5px;
-  margin-top: 3px;
-  box-sizing: border-box;
+.prayer-name {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.prayer-value {
+    font-size: 1.5em;
+    color: #34495e;
 }
 
 .btn {
-  display: block;
-  margin: 10px auto;
-  padding: 8px 16px;
-  background: #3f51b5;
+  display: inline-block;
+  margin-top: 20px;
+  padding: 12px 24px;
+  background-color: #3498db;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
   text-decoration: none;
-  text-align: center;
-  width: fit-content;
+  font-size: 1em;
+  transition: background-color 0.3s;
 }
 
-.submit {
-  display: block;
-  margin: 10px auto;
-  padding: 8px 16px;
-  background: #3fb557;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.btn:hover {
+  background-color: #2980b9;
 }
 
-#notification-menu input[type="checkbox"] {
-  margin-right: 5px;
+#btn-subscribe.subscribed {
+    background-color: #e74c3c;
+}
+#btn-subscribe.subscribed:hover {
+    background-color: #c0392b;
 }
 
-.usr-feedback {
-  text-align: center;
-  bottom: 0;
-  width: 100%;
-  padding: 10px;
-  color: rgb(0, 0, 0);
-  background: none;
-  border: none;
-}
-
-.table-responsive-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin-top: 20px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-}
-
-.preview-table {
-    width: 100%;
-    min-width: 800px;
-    border-collapse: collapse;
-    background: #fff;
-}
-
-.preview-table th, .preview-table td {
-    border-bottom: 1px solid #ddd;
-    border-left: 1px solid #ddd;
-    padding: 10px;
-    text-align: left;
-    white-space: nowrap;
-}
-
-.preview-table th:first-child, .preview-table td:first-child {
-    border-left: none;
-}
-
-.preview-table th {
-    background-color: #f2f2f2;
-}
-
-.preview-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-
-/* =============== Gaya Notifikasi Toast =============== */
+/* Toast Notifier */
 .toast {
     position: fixed;
     top: -100px;
@@ -136,15 +93,13 @@ h1, h2 {
     padding: 15px 20px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     width: 90%;
     max-width: 500px;
     z-index: 1000;
     opacity: 0;
-    transition: top 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    transition: top 0.5s ease, opacity 0.5s ease;
     border-left: 5px solid;
+    background-color: #fff;
 }
 
 .toast.show {
@@ -152,55 +107,8 @@ h1, h2 {
     opacity: 1;
 }
 
-.toast-content p {
-    margin: 0;
-    padding: 0;
-}
+.toast p { margin: 0; }
+.toast-message { font-weight: bold; margin-bottom: 5px !important; }
 
-.toast-message {
-    font-weight: bold;
-    margin-bottom: 5px !important;
-}
-
-.toast-solution {
-    font-size: 0.9em;
-}
-
-.toast-close-btn {
-    font-size: 24px;
-    font-weight: bold;
-    cursor: pointer;
-    padding-left: 20px;
-}
-
-.toast-error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border-left-color: #f5c6cb;
-}
-
-.toast-info {
-    background-color: #d1ecf1;
-    color: #0c5460;
-    border-left-color: #bee5eb;
-}
-
-/* =============== Gaya Tambahan untuk Menu Notifikasi =============== */
-.sub-menu-section {
-  border-top: 1px solid #eee;
-  padding-top: 15px;
-  margin-top: 20px;
-}
-
-.sub-menu-section h3 {
-  margin-top: 0;
-  text-align: center;
-}
-
-.btn.download-btn {
-  background-color: #6c757d; /* Warna abu-abu */
-  width: 100%;
-  box-sizing: border-box;
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
+.toast-error { color: #721c24; border-left-color: #f5c6cb; }
+.toast-info { color: #0c5460; border-left-color: #bee5eb; }

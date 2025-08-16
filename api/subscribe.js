@@ -1,34 +1,30 @@
-const { Pool } = require('pg');
-const webpush = require('web-push');
+import { db } from '../lib/database.js';
 
 export default async function handler(req, res) {
+  // Hanya izinkan metode POST
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ status: 'error', message: 'Method Not Allowed' });
   }
 
-  const { subscription, location } = req.body;
-  if (!subscription || !location) {
-    return res.status(400).json({ error: 'Data tidak lengkap' });
-  }
+  const { subscription } = req.body;
 
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-  });
+  // Validasi input
+  if (!subscription || !subscription.endpoint) {
+    return res.status(400).json({ status: 'error', message: 'Subscription object tidak valid.' });
+  }
 
   const query = `
-    INSERT INTO subscriptions (endpoint, subscription_data, location)
-    VALUES ($1, $2, $3)
+    INSERT INTO subscriptions (endpoint, subscription_data)
+    VALUES ($1, $2)
     ON CONFLICT (endpoint) DO UPDATE SET
-        subscription_data = EXCLUDED.subscription_data,
-        location = EXCLUDED.location;
+      subscription_data = EXCLUDED.subscription_data;
   `;
 
   try {
-    await pool.query(query, [subscription.endpoint, subscription, location]);
-    res.status(201).json({ message: 'Subscription tersimpan' });
+    await db.query(query, [subscription.endpoint, subscription]);
+    res.status(201).json({ status: 'ok', message: 'Subscription berhasil disimpan.' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Gagal menyimpan subscription' });
+    console.error('Gagal menyimpan subscription:', err);
+    res.status(500).json({ status: 'error', message: 'Gagal menyimpan subscription ke database.' });
   }
 }

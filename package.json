@@ -1,7 +1,8 @@
 {
-  "name": "jadwal-sholat-backend-vercel",
+  "name": "proyek-jadwal-sholat-refactored",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "pg": "^8.11.3",
     "web-push": "^3.6.6"
