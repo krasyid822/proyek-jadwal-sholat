@@ -580,3 +580,5 @@ var DMath = {
 
 
 var prayTimes = new PrayTimes();
+
+export default PrayTimes;
