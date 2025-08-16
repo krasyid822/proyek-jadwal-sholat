@@ -1,6 +1,6 @@
-import { db } from '../lib/database.js';
+import { db } from './_lib/database.js'; // <-- PERUBAHAN DI SINI
 import webpush from 'web-push';
-import PrayTimes from '../lib/PrayTimes.js';
+import PrayTimes from './_lib/PrayTimes.js'; // <-- PERUBAHAN DI SINI
 import moment from 'moment-timezone';
 
 // Konfigurasi VAPID dari environment variables

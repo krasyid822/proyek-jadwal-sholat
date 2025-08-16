@@ -1,4 +1,4 @@
-import { db } from '../lib/database.js';
+import { db } from './_lib/database.js'; // <-- PERUBAHAN DI SINI
 
 export default async function handler(req, res) {
   // Hanya izinkan metode POST
