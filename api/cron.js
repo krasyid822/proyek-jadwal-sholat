@@ -1,7 +1,7 @@
-import { db } from './_lib/database.js'; // <-- PERUBAHAN DI SINI
+import { db } from './_lib/database.js';
 import webpush from 'web-push';
-import PrayTimes from './_lib/PrayTimes.js'; // <-- PERUBAHAN DI SINI
-import moment from 'moment-timezone';
+import PrayTimes from './_lib/PrayTimes.js';
+import moment from 'moment-timezone'; // <-- PENAMBAHAN BARIS INI UNTUK MEMPERBAIKI ERROR
 
 // Konfigurasi VAPID dari environment variables
 webpush.setVapidDetails(
